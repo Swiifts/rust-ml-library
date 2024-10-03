@@ -1,6 +1,37 @@
 use std::fmt; 
-use std::ops::Mul;
+use std::ops::{Add, Mul, Sub};
 use rand::Rng;
+
+enum MatrixData {
+    Vector(Vec<f64>),
+    Scalar(f64)
+}
+
+impl MatrixData{
+    fn initialize(self, rows: usize, cols: usize) -> Vec<f64> {
+        match self {
+            MatrixData::Vector(vec) => {
+                if vec.len() != rows*cols {
+                    panic!("Invalid size for matrix initialization. Expected {}x{} elements but got {}.", rows, cols, vec.len());
+                }
+                vec
+            }
+            MatrixData::Scalar(val) => vec![val; rows*cols],
+        }
+    }
+}
+
+impl From<Vec<f64>> for MatrixData {
+    fn from(value: Vec<f64>) -> Self {
+        MatrixData::Vector(value)
+    }
+}
+
+impl From<f64> for MatrixData {
+    fn from(val: f64) -> Self {
+        MatrixData::Scalar(val)
+    }
+}
 
 pub struct Matrix {
     rows: usize,
@@ -10,25 +41,24 @@ pub struct Matrix {
 
 impl Matrix {
 
-    pub fn new(rows: usize, cols: usize, data: Vec<f64>) -> Matrix {
-        
-        if data.len() != rows * cols { panic!("Invalid size for matrix initialisation\nRows: {}; Cols: {}; Data len: {}", rows, cols, data.len()); }
-    
+    pub fn new<T: Into<MatrixData>>(rows: usize, cols: usize, data: T) -> Matrix {
+        let data = data.into().initialize(rows, cols);
         Matrix { rows, cols, data }
-    }
-
-    pub fn zeros(rows: usize, cols: usize) -> Matrix {
-        Matrix { rows, cols, data: vec![0.0; rows*cols] }
-    }
-
-    pub fn ones(rows: usize, cols: usize) -> Matrix {
-        Matrix { rows, cols, data: vec![1.0; rows*cols] }
     }
 
     pub fn rand(rows: usize, cols: usize) -> Matrix {
         let mut rng = rand::thread_rng();
         let data = (0..rows * cols).map(|_| rng.gen_range(0.0..1.0)).collect();
         Matrix { rows, cols, data }
+    }
+
+    pub fn dot(a: Matrix, b: Matrix) -> f64 {
+        if (a.rows != b.rows) || (a.cols != b.cols) { panic!("Matrix dimentions do not match {}x{} and {}x{}",a.rows,a.cols,b.rows,b.cols) }
+        let mut dot_product = 0.0;
+        for i in 0..(a.rows*a.cols) {
+            dot_product += a.data[i] * b.data[i];
+        }
+        dot_product
     }
 
 }
@@ -38,9 +68,9 @@ impl Mul for Matrix {
 
     fn mul(self, other: Matrix) -> Matrix{
 
-        if self.cols != other.rows { panic!("Matrix dimentions do not match for multiplications\nRows: {}; Columns: {}", self.rows, other.cols); }
+        if self.cols != other.rows { panic!("Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols) }
 
-        let mut result_matrix = Matrix::zeros(self.rows, other.cols);
+        let mut result_matrix: Matrix = Matrix::new(self.rows, other.cols, 0.0);
 
         for i in 0..self.rows {
             for j in 0..other.cols {
@@ -50,6 +80,40 @@ impl Mul for Matrix {
                 }
                 result_matrix.data[i * other.cols + j] = sum;
             }
+        }
+
+        result_matrix
+    }
+}
+
+impl Sub for Matrix {
+    type Output = Matrix;
+
+    fn sub(self, other: Matrix) -> Matrix {
+        
+        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols) }
+        
+        let mut result_matrix: Matrix = Matrix::new(self.rows, self.cols, 0.0);
+
+        for i in 0..(self.rows*self.cols) {
+            result_matrix.data[i]=self.data[i]-other.data[i];
+        }
+
+        result_matrix
+    }
+}
+
+impl Add for Matrix {
+    type Output = Matrix;
+
+    fn add(self, other: Matrix) -> Matrix {
+        
+        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols) }
+        
+        let mut result_matrix: Matrix = Matrix::new(self.rows, self.cols, 0.0);
+
+        for i in 0..(self.rows*self.cols) {
+            result_matrix.data[i]=self.data[i]+other.data[i];
         }
 
         result_matrix
