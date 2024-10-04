@@ -1,14 +1,13 @@
-#[path ="libs/rvmath.rs"] mod rvmath;
-
-use crate::rvmath::Matrix;
+mod libs {
+    pub mod rvmath;
+}
+use libs::rvmath::{self, structures::Matrix};
 
 fn main() {
-    let matrix1 = Matrix::new(4, 2, vec![222.0, 2.0, 3.0, 4.0, 111.0, 2.0, 3.0, 4.0]);
-    let matrix2 = Matrix::new(4, 1, vec![111.0, 2.0, 3.0, 4.0]);
-    let scalar = 01;
-    println!("{}", scalar);
+    let matrix1 = Matrix::new(1, 4, vec![3.0,4.0,3.0,4.0]);
+    let matrix2 = Matrix::new(2, 2, vec![3.0,4.0,3.0,4.0]);
 
-    let result: Matrix = Matrix::identity(4);
+    let result = rvmath::matrix::distance(matrix1, matrix2.reshape(2,3));
 
     println!("Resulting Matrix:\n{}", result);
 }

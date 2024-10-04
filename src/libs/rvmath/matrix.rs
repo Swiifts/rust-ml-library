@@ -2,35 +2,7 @@ use std::fmt;
 use std::ops::{Add, Mul, Sub, Div};
 use rand::Rng;
 use colored::*;
-
-#[derive(Clone)]
-pub struct Matrix {
-    rows: usize,
-    cols: usize,
-    data: Vec<f64>,
-}
-pub enum MatrixData {
-    Vector(Vec<f64>),
-    Scalar(f64),
-    Matrix(Matrix),
-    Usize(usize),
-}
-
-impl MatrixData{
-    fn initialize(self, rows: usize, cols: usize) -> Vec<f64> {
-        match self {
-            MatrixData::Vector(vec) => {
-                if vec.len() != rows*cols {
-                    panic!("{}", format!("ERROR: Invalid size for matrix initialization. Expected {}x{} elements but got {}.", rows, cols, vec.len()).red().bold());
-                }
-                vec
-            }
-            MatrixData::Scalar(val) => vec![val; rows*cols],
-            MatrixData::Matrix(mat) => mat.data,       
-            MatrixData::Usize(val) => vec![val as f64; rows*cols],     
-        }
-    }
-}
+use super::structures::{Matrix, MatrixData};
 
 impl From<Vec<f64>> for MatrixData {
     fn from(value: Vec<f64>) -> Self {
@@ -72,7 +44,7 @@ impl Matrix {
         result_matrix
     }
 
-    pub fn transpose(&self) -> Matrix {
+    pub fn transpose(self) -> Matrix {
         let mut result_matrix: Matrix = Matrix::new(self.cols, self.rows, 0);
         
         for row in 0..self.rows {
@@ -82,6 +54,32 @@ impl Matrix {
         }
 
         result_matrix
+    }
+
+    pub fn map(self, f: fn(f64) -> f64) -> Matrix {
+        let mut result_matrix: Matrix = Matrix::new(self.rows, self.cols, 0.0);
+        for i in 0..(self.rows*self.cols) {
+            result_matrix.data[i] = f(self.data[i])
+        }
+        result_matrix
+    }
+
+    pub fn reshape(self, rows:usize, cols:usize) -> Matrix {
+        if self.rows*self.cols != rows*cols { panic!("{}", format!("ERROR in reshape() (file: {}, line: {}). Dimensions mismatch: {}x{} cannot be reshaped into {}x{}.", file!(), line!(), self.rows, self.cols, rows, cols).red().bold()); }
+        Matrix {rows, cols, data: self.data}
+    }
+
+    pub fn sum(self) -> f64{
+        let mut sum: f64 = 0.0;
+        for i in 0..(self.rows*self.cols) {
+            sum += self.data[i];
+        }
+        sum
+    }
+    
+    pub fn magnitude(self) -> f64 {
+        if self.rows != 1 && self.cols != 1 {panic!("{}", format!("ERROR in magnitude() (file: {}, line: {}). Matrix dimensions {}x{} must be a vector (*x1 or 1x*).", file!(), line!(), self.rows, self.cols).red().bold())}
+        self.map(|x: f64| x.powi(2)).sum().sqrt()
     }
 
 }
@@ -115,7 +113,7 @@ impl Mul for Matrix {
 
     fn mul(self, other: Matrix) -> Matrix{
 
-        if self.cols != other.rows { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols).red().bold()) }
+        if self.cols != other.rows { panic!("{}", format!("ERROR in mul() (file: {}, line: {}). Matrix dimensions do not match: {}x{} and {}x{}.", file!(), line!(), self.rows, self.cols, other.rows, other.cols).red().bold()) }
 
         let mut result_matrix: Matrix = Matrix::new(self.rows, other.cols, 0.0);
 
@@ -138,7 +136,7 @@ impl Sub for Matrix {
 
     fn sub(self, other: Matrix) -> Matrix {
         
-        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols).red().bold()) }
+        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("{}", format!("ERROR in sub() (file: {}, line: {}). Matrix dimensions do not match: {}x{} and {}x{}.", file!(), line!(), self.rows, self.cols, other.rows, other.cols).red().bold()) }
         
         let mut result_matrix: Matrix = Matrix::new(self.rows, self.cols, 0.0);
 
@@ -155,7 +153,7 @@ impl Add for Matrix {
 
     fn add(self, other: Matrix) -> Matrix {
         
-        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols).red().bold()) }
+        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("{}", format!("ERROR in add() (file: {}, line: {}). Matrix dimensions do not match: {}x{} and {}x{}.", file!(), line!(), self.rows, self.cols, other.rows, other.cols).red().bold()) }
         
         let mut result_matrix: Matrix = Matrix::new(self.rows, self.cols, 0.0);
 
@@ -183,7 +181,7 @@ impl fmt::Display for Matrix {
 }
 
 pub fn dot(a: Matrix, b: Matrix) -> f64 {
-    if (a.rows != b.rows) || (a.cols != b.cols) { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",a.rows,a.cols,b.rows,b.cols).red().bold()) }
+    if (a.rows != b.rows) || (a.cols != b.cols) { panic!("{}", format!("ERROR in dot() (file: {}, line: {}). Matrix dimensions do not match: {}x{} and {}x{}.", file!(), line!(), a.rows, a.cols, b.rows, b.cols).red().bold()) }
     let mut dot_product = 0.0;
     for i in 0..(a.rows*a.cols) {
         dot_product += a.data[i] * b.data[i];
@@ -192,10 +190,10 @@ pub fn dot(a: Matrix, b: Matrix) -> f64 {
 }
 
 pub fn mean(arr: &[Matrix]) -> Matrix {
-    if arr.is_empty() { panic!("{}", format!("ERROR: You have not provided any valid matrices!").red().bold()) }
+    if arr.is_empty() { panic!("{}", format!("ERROR in mean() (file: {}, line: {}). You have not provided any valid matrices!", file!(), line!()).red().bold()) }
     if arr.len() == 1 { return arr[0].clone(); }
     for i in 1..arr.len() {
-        if arr[0].rows != arr[i].rows || arr[0].cols != arr[i].cols { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",arr[0].rows,arr[0].cols,arr[i].rows,arr[i].cols).red().bold()) }
+        if arr[0].rows != arr[i].rows || arr[0].cols != arr[i].cols { panic!("{}", format!("ERROR in mean() (file: {}, line: {}). Matrix dimensions do not match: {}x{} and {}x{}.", file!(), line!(), arr[0].rows, arr[0].cols, arr[i].rows, arr[i].cols).red().bold()) }
     }
     let mut result_matrix: Matrix = Matrix::new(arr[0].rows, arr[0].cols, 0.0);
 
@@ -209,15 +207,15 @@ pub fn mean(arr: &[Matrix]) -> Matrix {
 
 }
 
-// TODO Determinant
-
+pub fn distance(a: Matrix, b: Matrix) -> f64{
+    (a - b).magnitude()
+}
 // TODO Inverse
+
+// TODO Determinant
 
 // TODO Eigenvalues 
 
 // TODO Eigenvectors
 
-// TODO "Map" on Matrix
-
 // TODO Norms
-
