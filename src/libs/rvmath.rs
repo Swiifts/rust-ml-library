@@ -13,6 +13,7 @@ pub enum MatrixData {
     Vector(Vec<f64>),
     Scalar(f64),
     Matrix(Matrix),
+    Usize(usize),
 }
 
 impl MatrixData{
@@ -25,7 +26,8 @@ impl MatrixData{
                 vec
             }
             MatrixData::Scalar(val) => vec![val; rows*cols],
-            MatrixData::Matrix(mat) => mat.data,            
+            MatrixData::Matrix(mat) => mat.data,       
+            MatrixData::Usize(val) => vec![val as f64; rows*cols],     
         }
     }
 }
@@ -35,10 +37,16 @@ impl From<Vec<f64>> for MatrixData {
         MatrixData::Vector(value)
     }
 }
-// TODO add usize/i64
+
 impl From<f64> for MatrixData {
     fn from(val: f64) -> Self {
         MatrixData::Scalar(val)
+    }
+}
+
+impl From<usize> for MatrixData {
+    fn from(val: usize) -> Self {
+        MatrixData::Usize(val)
     }
 }
 
@@ -55,7 +63,27 @@ impl Matrix {
         Matrix { rows, cols, data }
     }
     
-    // TODO Identity matrix
+    pub fn identity(size: usize) -> Matrix {
+        let mut result_matrix: Matrix = Matrix::new(size, size, 0);
+        
+        for i in 0..size {
+            result_matrix.data[i + size*i] = 1.0;
+        }
+        result_matrix
+    }
+
+    pub fn transpose(&self) -> Matrix {
+        let mut result_matrix: Matrix = Matrix::new(self.cols, self.rows, 0);
+        
+        for row in 0..self.rows {
+            for col in 0..self.cols {
+                result_matrix.data[col * self.rows + row] = self.data[row * self.cols + col];
+            }
+        }
+
+        result_matrix
+    }
+
 }
 
 impl Mul<f64> for Matrix {
@@ -180,8 +208,6 @@ pub fn mean(arr: &[Matrix]) -> Matrix {
     result_matrix / arr.len() as f64
 
 }
-
-// TODO Transpose
 
 // TODO Determinant
 
