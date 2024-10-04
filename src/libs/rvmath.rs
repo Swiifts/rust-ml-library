@@ -1,6 +1,7 @@
 use std::fmt; 
 use std::ops::{Add, Mul, Sub, Div};
 use rand::Rng;
+use colored::*;
 
 #[derive(Clone)]
 pub struct Matrix {
@@ -19,7 +20,7 @@ impl MatrixData{
         match self {
             MatrixData::Vector(vec) => {
                 if vec.len() != rows*cols {
-                    panic!("Invalid size for matrix initialization. Expected {}x{} elements but got {}.", rows, cols, vec.len());
+                    panic!("{}", format!("ERROR: Invalid size for matrix initialization. Expected {}x{} elements but got {}.", rows, cols, vec.len()).red().bold());
                 }
                 vec
             }
@@ -34,7 +35,7 @@ impl From<Vec<f64>> for MatrixData {
         MatrixData::Vector(value)
     }
 }
-
+// TODO add usize/i64
 impl From<f64> for MatrixData {
     fn from(val: f64) -> Self {
         MatrixData::Scalar(val)
@@ -86,7 +87,7 @@ impl Mul for Matrix {
 
     fn mul(self, other: Matrix) -> Matrix{
 
-        if self.cols != other.rows { panic!("Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols) }
+        if self.cols != other.rows { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols).red().bold()) }
 
         let mut result_matrix: Matrix = Matrix::new(self.rows, other.cols, 0.0);
 
@@ -109,7 +110,7 @@ impl Sub for Matrix {
 
     fn sub(self, other: Matrix) -> Matrix {
         
-        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols) }
+        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols).red().bold()) }
         
         let mut result_matrix: Matrix = Matrix::new(self.rows, self.cols, 0.0);
 
@@ -126,7 +127,7 @@ impl Add for Matrix {
 
     fn add(self, other: Matrix) -> Matrix {
         
-        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols) }
+        if (self.rows != other.rows) || (self.cols != other.cols) { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",self.rows,self.cols,other.rows,other.cols).red().bold()) }
         
         let mut result_matrix: Matrix = Matrix::new(self.rows, self.cols, 0.0);
 
@@ -138,7 +139,6 @@ impl Add for Matrix {
     }
 }
 
-// TODO Redo Display into more standart math format
 impl fmt::Display for Matrix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for row in 0..self.rows {
@@ -155,7 +155,7 @@ impl fmt::Display for Matrix {
 }
 
 pub fn dot(a: Matrix, b: Matrix) -> f64 {
-    if (a.rows != b.rows) || (a.cols != b.cols) { panic!("Matrix dimentions do not match {}x{} and {}x{}",a.rows,a.cols,b.rows,b.cols) }
+    if (a.rows != b.rows) || (a.cols != b.cols) { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",a.rows,a.cols,b.rows,b.cols).red().bold()) }
     let mut dot_product = 0.0;
     for i in 0..(a.rows*a.cols) {
         dot_product += a.data[i] * b.data[i];
@@ -164,10 +164,10 @@ pub fn dot(a: Matrix, b: Matrix) -> f64 {
 }
 
 pub fn mean(arr: &[Matrix]) -> Matrix {
-    if arr.is_empty() { panic!("You have not provided any valid matrices!") }
+    if arr.is_empty() { panic!("{}", format!("ERROR: You have not provided any valid matrices!").red().bold()) }
     if arr.len() == 1 { return arr[0].clone(); }
     for i in 1..arr.len() {
-        if arr[0].rows != arr[i].rows || arr[0].cols != arr[i].cols { panic!("Matrix dimentions do not match {}x{} and {}x{}",arr[0].rows,arr[0].cols,arr[i].rows,arr[i].cols) }
+        if arr[0].rows != arr[i].rows || arr[0].cols != arr[i].cols { panic!("{}", format!("ERROR: Matrix dimentions do not match {}x{} and {}x{}",arr[0].rows,arr[0].cols,arr[i].rows,arr[i].cols).red().bold()) }
     }
     let mut result_matrix: Matrix = Matrix::new(arr[0].rows, arr[0].cols, 0.0);
 
