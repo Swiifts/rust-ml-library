@@ -31,6 +31,16 @@ impl Matrix {
         Matrix { rows, cols, data }
     }
 
+    pub fn zeros(rows: usize, cols: usize) -> Matrix {
+        let mat: Matrix = Matrix::new(rows,cols,0.0);
+        mat
+    }
+
+    pub fn ones(rows: usize, cols: usize) -> Matrix {
+        let mat: Matrix = Matrix::new(rows,cols,1.0);
+        mat
+    }
+
     pub fn rand(rows: usize, cols: usize) -> Matrix {
         let mut rng = rand::thread_rng();
         let data = (0..rows * cols).map(|_| rng.gen_range(0.0..1.0)).collect();
@@ -71,6 +81,24 @@ impl Matrix {
         Matrix {rows, cols, data: self.data}
     }
 
+    pub fn get_rows(&self) -> Vec<Vec<f64>> {
+        let mut rows: Vec<Vec<f64>> = Vec::new();
+        for i in 0..self.rows {
+            let row_data: Vec<f64> = (0..self.cols).map(|j| self.data[i * self.cols + j]).collect();
+            rows.push(row_data);
+        }
+        rows
+    }
+    
+    pub fn get_cols(&self) -> Vec<Vec<f64>> {
+        let mut cols: Vec<Vec<f64>> = Vec::new();
+        for i in 0..self.cols {
+            let col_data: Vec<f64> = (0..self.rows).map(|j| self.data[j * self.cols + i]).collect();
+            cols.push(col_data);
+        }
+        cols
+    }
+
     pub fn sum(&self) -> f64{
         let mut sum: f64 = 0.0;
         for i in 0..(self.rows*self.cols) {
@@ -79,9 +107,49 @@ impl Matrix {
         sum
     }
     
+    pub fn sum_row(&self) -> Vec<f64> {
+        let rows = self.get_rows();
+        let mut sums: Vec<f64> = Vec::new();
+        for i in rows {
+            let sum = Matrix::new(1, self.cols, i).sum();
+            sums.push(sum);
+        }
+        sums
+    }
+
+    pub fn sum_col(&self) -> Vec<f64> {
+        let cols = self.get_cols();
+        let mut sums: Vec<f64> = Vec::new();
+        for i in cols {
+            let sum = Matrix::new(self.rows, 1, i).sum();
+            sums.push(sum);
+        }
+        sums
+    }
+
     pub fn magnitude(&self) -> f64 {
         if self.rows != 1 && self.cols != 1 {panic!("{}", format!("ERROR in magnitude() (file: {}, line: {}). Matrix dimensions {}x{} must be a vector (*x1 or 1x*).", file!(), line!(), self.rows, self.cols).red().bold())}
         self.map(|x: f64| x.powi(2)).sum().sqrt()
+    }
+
+    pub fn magnitude_row(&self) -> Vec<f64> {
+        let rows = self.get_rows();
+        let mut magnitudes: Vec<f64> = Vec::new();
+        for i in rows {
+            let magnitude = Matrix::new(1, self.cols, i).magnitude();
+            magnitudes.push(magnitude);
+        }
+        magnitudes
+    }
+
+    pub fn magnitude_col(&self) -> Vec<f64> {
+        let cols = self.get_cols();
+        let mut magnitudes: Vec<f64> = Vec::new();
+        for i in cols {
+            let magnitude = Matrix::new(self.rows, 1, i).magnitude();
+            magnitudes.push(magnitude);
+        }
+        magnitudes
     }
 
     pub fn median(&self) -> f64 {
@@ -94,6 +162,26 @@ impl Matrix {
             let median: f64 = arr[arr.len()/2];
             median
         }
+    }
+
+    pub fn median_row(&self) -> Vec<f64> {
+        let rows = self.get_rows();
+        let mut medians: Vec<f64> = Vec::new();
+        for i in rows {
+            let median = Matrix::new(1, self.cols, i).median();
+            medians.push(median);
+        }
+        medians
+    }
+
+    pub fn median_col(&self) -> Vec<f64> {
+        let cols = self.get_cols();
+        let mut medians: Vec<f64> = Vec::new();
+        for i in cols {
+            let median = Matrix::new(self.rows, 1, i).median();
+            medians.push(median);
+        }
+        medians
     }
 
     pub fn percentile(&self, p: f64) -> f64 {
@@ -111,6 +199,28 @@ impl Matrix {
         }
     }
     
+    pub fn percentile_row(&self, p: f64) -> Vec<f64> {
+        if p < 0.0 || p > 1.0 {panic!("{}", format!("ERROR in percentile() (file: {}, line: {}). Percentile must be in range 0.0-1.0, whereas provided {}", file!(), line!(), p).red().bold())}
+        let rows = self.get_rows();
+        let mut percenttiles: Vec<f64> = Vec::new();
+        for i in rows {
+            let percenttile = Matrix::new(1, self.cols, i).percentile(p);
+            percenttiles.push(percenttile);
+        }
+        percenttiles
+    }
+
+    pub fn percentile_col(&self, p: f64) -> Vec<f64> {
+        if p < 0.0 || p > 1.0 {panic!("{}", format!("ERROR in percentile() (file: {}, line: {}). Percentile must be in range 0.0-1.0, whereas provided {}", file!(), line!(), p).red().bold())}
+        let cols = self.get_cols();
+        let mut percenttiles: Vec<f64> = Vec::new();
+        for i in cols {
+            let percenttile = Matrix::new(self.rows, 1, i).percentile(p);
+            percenttiles.push(percenttile);
+        }
+        percenttiles
+    }
+
     pub fn mode(&self) -> Vec<f64> {
         let mut values: HashMap<OrderedFloat<f64>, usize> = HashMap::new();
         for &value in &self.data {
@@ -126,7 +236,27 @@ impl Matrix {
     
         modes
     }
-        
+
+    pub fn mode_row(&self) -> Vec<Vec<f64>> {
+        let rows: Vec<Vec<f64>> = self.get_rows();
+        let mut modes: Vec<Vec<f64>> = Vec::new();
+        for i in rows {
+            let mode = Matrix::new(1, self.cols, i).mode();
+            modes.push(mode);
+        }
+        modes
+    }
+
+    pub fn mode_col(&self) -> Vec<Vec<f64>> {
+        let cols = self.get_cols();
+        let mut modes: Vec<Vec<f64>> = Vec::new();
+        for i in cols {
+            let mode = Matrix::new(self.rows, 1, i).mode();
+            modes.push(mode);
+        }
+        modes
+    }
+
 }
 
 impl Mul<f64> for Matrix {
