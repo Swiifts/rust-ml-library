@@ -19,7 +19,7 @@ impl MatrixData{
         match self {
             MatrixData::Vector(vec) => {
                 if vec.len() != rows*cols {
-                    panic!("{}", format!("ERROR in initialize() (file: {}, line: {}). Invalid size for matrix initialization. Expected {}x{} elements but got {}.", file!(), line!(), rows, cols, vec.len()).red().bold())
+                    panic!("{}", format!("ERROR in initialize() (file: {}, line: {}). Invalid size for matrix initialization. Expected {}({}x{}) elements but got {}.", file!(), line!(), rows*cols, rows, cols, vec.len()).red().bold())
                 }
                 vec
             }

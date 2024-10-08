@@ -2,6 +2,8 @@ use std::fmt;
 use std::ops::{Add, Mul, Sub, Div};
 use rand::Rng;
 use colored::*;
+use std::collections::HashMap;
+use ordered_float::OrderedFloat;
 use super::structures::{Matrix, MatrixData};
 
 impl From<Vec<f64>> for MatrixData {
@@ -44,7 +46,7 @@ impl Matrix {
         result_matrix
     }
 
-    pub fn transpose(self) -> Matrix {
+    pub fn transpose(&self) -> Matrix {
         let mut result_matrix: Matrix = Matrix::new(self.cols, self.rows, 0);
         
         for row in 0..self.rows {
@@ -56,7 +58,7 @@ impl Matrix {
         result_matrix
     }
 
-    pub fn map(self, f: fn(f64) -> f64) -> Matrix {
+    pub fn map(&self, f: fn(f64) -> f64) -> Matrix {
         let mut result_matrix: Matrix = Matrix::new(self.rows, self.cols, 0.0);
         for i in 0..(self.rows*self.cols) {
             result_matrix.data[i] = f(self.data[i])
@@ -69,7 +71,7 @@ impl Matrix {
         Matrix {rows, cols, data: self.data}
     }
 
-    pub fn sum(self) -> f64{
+    pub fn sum(&self) -> f64{
         let mut sum: f64 = 0.0;
         for i in 0..(self.rows*self.cols) {
             sum += self.data[i];
@@ -77,11 +79,54 @@ impl Matrix {
         sum
     }
     
-    pub fn magnitude(self) -> f64 {
+    pub fn magnitude(&self) -> f64 {
         if self.rows != 1 && self.cols != 1 {panic!("{}", format!("ERROR in magnitude() (file: {}, line: {}). Matrix dimensions {}x{} must be a vector (*x1 or 1x*).", file!(), line!(), self.rows, self.cols).red().bold())}
         self.map(|x: f64| x.powi(2)).sum().sqrt()
     }
 
+    pub fn median(&self) -> f64 {
+        let mut arr = self.data.clone();
+        arr.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        if self.data.len() % 2 == 0 {
+            let median: f64 = (arr[arr.len()/2-1]+arr[arr.len()-2])/2.0;
+            median
+        } else {
+            let median: f64 = arr[arr.len()/2];
+            median
+        }
+    }
+
+    pub fn percentile(&self, p: f64) -> f64 {
+        if p < 0.0 || p > 1.0 {panic!("{}", format!("ERROR in percentile() (file: {}, line: {}). Percentile must be in range 0.0-1.0, whereas provided {}", file!(), line!(), p).red().bold())}
+        let mut arr = self.data.clone();
+        arr.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let pointer: f64 = (arr.len() as f64 - 1.0) * p;
+    
+        if pointer % 1.0 != 0.0 {
+            let percentile = (arr[pointer.ceil() as usize] + arr[pointer.floor() as usize]) / 2.0;
+            percentile
+        } else {
+            let index = pointer as usize;
+            arr[index]
+        }
+    }
+    
+    pub fn mode(&self) -> Vec<f64> {
+        let mut values: HashMap<OrderedFloat<f64>, usize> = HashMap::new();
+        for &value in &self.data {
+            *values.entry(OrderedFloat(value)).or_insert(1) += 1;
+        }
+        let max_count = values.values().cloned().max().unwrap_or(0);
+        let mut modes = Vec::new();
+        for (&OrderedFloat(value), &count) in &values {
+            if count == max_count {
+                modes.push(value);
+            }
+        }
+    
+        modes
+    }
+        
 }
 
 impl Mul<f64> for Matrix {
@@ -210,6 +255,7 @@ pub fn mean(arr: &[Matrix]) -> Matrix {
 pub fn distance(a: Matrix, b: Matrix) -> f64{
     (a - b).magnitude()
 }
+
 // TODO Inverse
 
 // TODO Determinant
